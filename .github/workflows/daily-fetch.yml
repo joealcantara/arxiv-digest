@@ -7,6 +7,9 @@ on:
     - cron: '0 2 * * 1-5'
   workflow_dispatch:  # Allows manual triggering from GitHub UI
 
+permissions:
+  contents: write  # Allow workflow to push commits
+
 jobs:
   fetch-papers:
     runs-on: ubuntu-latest
