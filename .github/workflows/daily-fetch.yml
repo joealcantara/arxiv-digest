@@ -1,0 +1,40 @@
+name: Daily ArXiv Fetch
+
+on:
+  schedule:
+    # Run Mon-Fri at 2:00 AM UTC (9:00 PM EST previous day - after ArXiv publishes)
+    # ArXiv publishes Sun-Thu evenings, so Mon-Fri mornings catches all new papers
+    - cron: '0 2 * * 1-5'
+  workflow_dispatch:  # Allows manual triggering from GitHub UI
+
+jobs:
+  fetch-papers:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+
+    - name: Install dependencies
+      run: uv sync
+
+    - name: Fetch ArXiv papers
+      run: |
+        # Change DAYS to 1 for production (just yesterday's papers)
+        sed -i 's/DAYS = 7/DAYS = 1/' fetch_arxiv.py
+        uv run fetch_arxiv.py
+
+    - name: Commit and push if changes
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add data/
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Update ArXiv papers - $(date +'%Y-%m-%d')" && git push)
